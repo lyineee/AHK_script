@@ -20,11 +20,11 @@
 	send_text := UriEncode(clipboard) ;encode for transmition 
 
     if !(reg_result = 0){
-        http("get","https://api.day.app/pdjmwMmJYgrjGgQxP3u8e8/" send_text "?url=" clipboard)
+        http("get","https://api.day.app/you_private_key/" send_text "?url=" clipboard)
 		return
     }
 
-    http("get","https://api.day.app/pdjmwMmJYgrjGgQxP3u8e8/" send_text "?automaticallyCopy=1")
+    http("get","https://api.day.app/you_private_key/" send_text "?automaticallyCopy=1")
 	return	
 
 
