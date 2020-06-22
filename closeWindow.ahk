@@ -1,3 +1,6 @@
 !w::
-Send "{Alt Down}{F4}{Alt Up}"
-Exit
+{
+    if(WinGetProcessName("A")="chrome.exe")
+        Exit
+    WinClose("A")
+}
