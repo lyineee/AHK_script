@@ -1,52 +1,50 @@
 package main
 
+import "C"
 import (
 	"context"
-	"fmt"
-	"log"
+	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 )
 
-// http helper for only get method
-// args: url
-func main() {
-	if len(os.Args) < 3 {
-		return
-	}
-	barkToken := os.Args[1]
-	title := os.Args[2]
-	if barkToken == "" || title == "" {
-		log.Fatalln("need both token and title to work")
-	}
-	// message := os.Args[3]
-	icon := "https://cdn-icons-png.flaticon.com/512/610/610021.png"
-	group := "来自PC"
-	url := fmt.Sprintf("https://api.day.app/%s/%s?group=%s&icon=%s", barkToken, quote(title), quote(group), quote(icon))
-	httpReq(url)
+//go:generate go build -buildmode=c-shared  -o httpHelper.dll .\main.go
+
+//export Quote
+func Quote(str *C.char) *C.char {
+	urlStr := C.GoString(str)
+	escapeUrl := url.QueryEscape(urlStr)
+	return C.CString(escapeUrl)
 }
 
-func httpReq(url string) {
-	log.Printf("request url is: %s", url)
+// http helper for only get method
+// args: url
+//export HttpGet
+func HttpGet(cUrl *C.char) *C.char {
+	// log.Printf("request url is: %s", url)
+	url := C.GoString(cUrl)
 	client := http.Client{}
 	ctx, cancel := context.WithTimeout(context.TODO(), 2*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	errHandler(err)
-	_, err = client.Do(req)
-	// log.Println(resp)
-	errHandler(err)
-}
-
-func quote(str string) (escapeUrl string) {
-	escapeUrl = url.QueryEscape(str)
-	return
-}
-
-func errHandler(err error) {
 	if err != nil {
-		log.Fatalf("request fail, detail: %s", err)
+		return errString(err)
 	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return errString(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errString(err)
+	}
+	return C.CString(string(body))
 }
+
+func errString(err error) *C.char {
+	return C.CString(err.Error())
+}
+
+func main() {}
